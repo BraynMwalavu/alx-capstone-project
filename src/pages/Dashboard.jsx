@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useJournalStore } from "../store/journalStore";
-import heroImage from "../assets/images/hero-image.jpeg"; // placeholder image for now
+
+// Replace with your Unsplash Access Key
+const UNSPLASH_ACCESS_KEY = "YOUR_ACCESS_KEY";
 
 export default function Dashboard() {
   const addEntry = useJournalStore((s) => s.addEntry);
@@ -10,7 +12,11 @@ export default function Dashboard() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // Likert-style mood options
+  const [quote, setQuote] = useState("");
+  const [author, setAuthor] = useState("");
+  const [heroImageUrl, setHeroImageUrl] = useState("");
+  const [loading, setLoading] = useState(true);
+
   const moods = [
     { key: "very-sad", emoji: "😢", label: "Very low" },
     { key: "sad", emoji: "🙁", label: "Low" },
@@ -18,6 +24,50 @@ export default function Dashboard() {
     { key: "happy", emoji: "🙂", label: "Good" },
     { key: "great", emoji: "😄", label: "Great" },
   ];
+
+  // Function to fetch quote and image
+  const fetchQuoteAndImage = async (moodQuery = "inspiration") => {
+    try {
+      setLoading(true);
+
+      // ZenQuotes API
+      const quoteRes = await fetch("https://zenquotes.io/api/random");
+      const quoteData = await quoteRes.json();
+      console.log("Quote API data:", quoteData);
+      setQuote(quoteData[0]?.q || "Stay positive and keep going!");
+      setAuthor(quoteData[0]?.a || "Reflectly AI");
+
+      // Unsplash API
+      const imageRes = await fetch(
+        `https://api.unsplash.com/search/photos?query=${moodQuery}&client_id=${UNSPLASH_ACCESS_KEY}&per_page=1`
+      );
+      const imageData = await imageRes.json();
+      console.log("Unsplash API data:", imageData);
+      setHeroImageUrl(
+        imageData.results[0]?.urls?.regular ||
+          "https://via.placeholder.com/800x400"
+      );
+    } catch (error) {
+      console.error("Error fetching quote or image:", error);
+      setQuote("Stay positive and keep going!");
+      setAuthor("Reflectly AI");
+      setHeroImageUrl("https://via.placeholder.com/800x400");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch on initial load
+  useEffect(() => {
+    fetchQuoteAndImage();
+  }, []);
+
+  // Fetch when mood changes
+  useEffect(() => {
+    if (selectedMood) {
+      fetchQuoteAndImage(selectedMood.key);
+    }
+  }, [selectedMood]);
 
   const handleSave = async () => {
     if (!content.trim()) return;
@@ -35,28 +85,33 @@ export default function Dashboard() {
     setSaving(false);
     setSaved(true);
     setContent("");
-    // setSelectedMood(null); // uncomment if you want to reset mood
     setTimeout(() => setSaved(false), 1600);
   };
 
   return (
     <main className="bg-[#1E3523] min-h-screen text-[#E4E8D5]">
       <div className="container mx-auto px-4 pt-16 pb-12 font-inter max-w-3xl">
-        {/* HERO (Image + Quote overlay) */}
-        <section className="relative w-full overflow-hidden rounded-2xl shadow-lg">
-          <img
-            src={heroImage}
-            alt="Inspirational"
-            className="w-full h-48 sm:h-56 md:h-64 object-cover align-middle"
-          />
+        {/* HERO (Dynamic Image + Quote overlay) */}
+        <section className="relative w-full overflow-hidden rounded-2xl shadow-lg h-64 sm:h-72 md:h-80">
+          {heroImageUrl ? (
+            <img
+              src={heroImageUrl}
+              alt="Inspirational"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-[#0F1F14]" />
+          )}
           <div className="absolute inset-0 bg-[#1E3523]/20" />
-          <div className="absolute inset-0 flex items-center justify-center text-center px-4">
-            <div>
-              <p className="font-poppins text-lg sm:text-xl md:text-2xl font-semibold text-[#EAFE45] drop-shadow-md">
-                “Wherever you go, go with all your heart.”
-              </p>
-              <p className="mt-1 text-sm text-[#E4E8D5]/90">— Confucius</p>
-            </div>
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+            {!loading && quote && (
+              <>
+                <p className="font-poppins text-lg sm:text-xl md:text-2xl font-semibold text-[#EAFE45] drop-shadow-md">
+                  “{quote}”
+                </p>
+                <p className="mt-1 text-sm text-[#E4E8D5]/90">— {author}</p>
+              </>
+            )}
           </div>
         </section>
 
@@ -119,7 +174,6 @@ export default function Dashboard() {
             </button>
           </div>
 
-          {/* SUCCESS TOAST (appears under Save button) */}
           {saved && (
             <div className="mt-4 inline-block bg-[#2B4731] border border-[#EAFE45] text-[#E4E8D5] px-4 py-2 rounded-lg shadow">
               <span role="img" aria-label="success" className="mr-1">
