@@ -2,22 +2,25 @@
 import React, { useState, useEffect } from "react";
 import { useJournalStore } from "../store/journalStore";
 
+// Dashboard: main journaling page where users pick a mood, write, and save entries
 export default function Dashboard() {
+  // Grab the `addEntry` action from our global Zustand store
   const addEntry = useJournalStore((s) => s.addEntry);
 
+  // Local state to track the mood, text input, and save status
   const [selectedMood, setSelectedMood] = useState(null);
-  const [content, setContent] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [content, setContent] = useState(""); // journal entry text
+  const [saving, setSaving] = useState(false); // whether save is in progress
+  const [saved, setSaved] = useState(false); // whether a save was successful
 
-  // Quote & Image state
+  // State for the motivational extras (quote + background image)
   const [quote, setQuote] = useState({ text: "", author: "" });
   const [imageUrl, setImageUrl] = useState("");
 
-  // Unsplash Access Key from .env
+  // Unsplash API key - stored in `.env`)
   const UNSPLASH_ACCESS_KEY = import.meta.env.VITE_UNSPLASH_ACCESS_KEY;
 
-  // Likert-style mood options
+  // Mood selector options (Likert scale style, from very sad → very happy)
   const moods = [
     { key: "very-sad", emoji: "😢", label: "Very low" },
     { key: "sad", emoji: "🙁", label: "Low" },
@@ -26,7 +29,9 @@ export default function Dashboard() {
     { key: "great", emoji: "😄", label: "Great" },
   ];
 
-  // Fetch quote via AllOrigins proxy to bypass CORS with cache-busting
+  // QUOTE FETCHING LOGIC
+  // We use ZenQuotes API, but since it doesn’t have CORS enabled,
+  // we wrap the request in the `allorigins.win` proxy to bypass restrictions.
   const fetchQuote = async () => {
     try {
       const url = `https://api.allorigins.win/get?url=${encodeURIComponent(
@@ -38,11 +43,13 @@ export default function Dashboard() {
       setQuote({ text: parsed[0].q, author: parsed[0].a });
     } catch (err) {
       console.error("Error fetching quote:", err);
+      // Fallback in case the API fails
       setQuote({ text: "Keep going, you're doing great!", author: "Reflectly" });
     }
   };
 
-  // Fetch random image from Unsplash with cache-busting
+  // IMAGE FETCHING LOGIC
+  // Pulls a random inspirational background from Unsplash API
   const fetchImage = async () => {
     if (!UNSPLASH_ACCESS_KEY) {
       console.warn("Unsplash Access Key is missing!");
@@ -59,35 +66,46 @@ export default function Dashboard() {
     }
   };
 
+  // On mount, load a quote + image once
   useEffect(() => {
     fetchQuote();
     fetchImage();
   }, []);
 
+  // SAVE ENTRY HANDLER
+  // When the user hits "Save Entry":
+  // 1. Validate there’s content
+  // 2. Construct an entry object
+  // 3. Save it into Zustand (and therefore localStorage)
+  // 4. Reset states + show a success toast
   const handleSave = async () => {
     if (!content.trim()) return;
     setSaving(true);
 
     const entry = {
       id: Date.now(),
-      mood: selectedMood?.emoji || "😐",
+      mood: selectedMood?.emoji || "😐", // fallback mood = neutral
       content: content.trim(),
       date: new Date().toISOString(),
     };
 
-    addEntry(entry);
+    addEntry(entry); // global store handles persistence
 
     setSaving(false);
     setSaved(true);
-    setContent("");
+    setContent(""); // clear textarea
+    // Hide success toast after 1.6s
     setTimeout(() => setSaved(false), 1600);
   };
 
   return (
     <main className="bg-[#1E3523] min-h-screen text-[#E4E8D5]">
       <div className="container mx-auto px-4 pt-16 pb-12 font-inter max-w-3xl">
-        {/* HERO (Image + Quote overlay) */}
+        
+        {/* HERO SECTION 
+            Displays a background image (Unsplash) with a motivational quote overlay */}
         <section className="relative w-full overflow-hidden rounded-2xl shadow-lg">
+          {/* Background image (or fallback loader) */}
           {imageUrl ? (
             <img
               src={imageUrl}
@@ -99,7 +117,11 @@ export default function Dashboard() {
               Loading image...
             </div>
           )}
+
+          {/* Dark overlay for text readability */}
           <div className="absolute inset-0 bg-[#1E3523]/20" />
+
+          {/* Quote (centered overlay) */}
           <div className="absolute inset-0 flex items-center justify-center text-center px-4">
             <div>
               <p className="font-poppins text-lg sm:text-xl md:text-2xl font-semibold text-[#EAFE45] drop-shadow-md">
@@ -112,7 +134,8 @@ export default function Dashboard() {
           </div>
         </section>
 
-        {/* MOOD SELECTOR */}
+        {/*MOOD SELECTOR 
+            Lets the user pick an emoji to log their current feeling */}
         <section className="mt-8 text-center">
           <h3 className="font-poppins text-lg font-semibold mb-4">
             How are you feeling right now?
@@ -140,7 +163,8 @@ export default function Dashboard() {
           </div>
         </section>
 
-        {/* JOURNAL INPUT */}
+        {/*JOURNAL INPUT
+            Main text area where users write their thoughts */}
         <section className="mt-8 text-center">
           <h3 className="font-poppins text-xl font-semibold mb-3">
             Your Thoughts, Your Space
@@ -156,6 +180,8 @@ export default function Dashboard() {
               p-4 leading-relaxed
             "
           />
+
+          {/* Save button */}
           <div className="mt-5 flex justify-center">
             <button
               onClick={handleSave}
@@ -171,7 +197,7 @@ export default function Dashboard() {
             </button>
           </div>
 
-          {/* SUCCESS TOAST */}
+          {/* Success Toast (appears briefly after saving) */}
           {saved && (
             <div className="mt-4 inline-block bg-[#2B4731] border border-[#EAFE45] text-[#E4E8D5] px-4 py-2 rounded-lg shadow">
               <span role="img" aria-label="success" className="mr-1">
