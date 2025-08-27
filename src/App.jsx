@@ -37,14 +37,13 @@ function App() {
               - Tailwind classes here:
                   bg-[#1E3523]   = brand green background
                   min-h-screen  = make sure it always fills the screen height
-                  container mx-auto = center and contain the content
                   px-4          = horizontal padding
                   pt-24 pb-8    = space for fixed navbar + bottom padding
           */}
           <Route
             path="/dashboard"
             element={
-              <main className="bg-[#1E3523] min-h-screen container mx-auto px-4 pt-24 pb-8">
+              <main className="bg-[#1E3523] min-h-screen px-4 pt-24 pb-8">
                 <Dashboard />
               </main>
             }
@@ -56,7 +55,7 @@ function App() {
           <Route
             path="/history"
             element={
-              <main className="bg-[#1E3523] min-h-screen container mx-auto px-4 pt-24 pb-8">
+              <main className="bg-[#1E3523] min-h-screen px-4 pt-24 pb-8">
                 <History />
               </main>
             }
@@ -68,7 +67,7 @@ function App() {
           <Route
             path="/insights"
             element={
-              <main className="bg-[#1E3523] min-h-screen container mx-auto px-4 pt-24 pb-8">
+              <main className="bg-[#1E3523] min-h-screen px-4 pt-24 pb-8">
                 <Insights />
               </main>
             }
