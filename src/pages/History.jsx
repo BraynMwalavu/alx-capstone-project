@@ -42,7 +42,7 @@ export default function History() {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen p-6 font-sans">
+    <div className="bg-gray-100 min-h-screen w-full p-6 font-sans">
       {/* Page Title */}
       <h2 className="text-3xl font-bold mb-6 text-gray-900">Your Journal History</h2>
 
